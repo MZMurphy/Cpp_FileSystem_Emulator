@@ -97,14 +97,49 @@ FileSystem::FileSystem(const string& testinput) {
 
 FileSystem::~FileSystem() {
 	// IMPLEMENT ME
+    // should delete all children nodes of root_ recursively AFTER we implement recurive node deletiion
+    //delete root_;  // Now this triggers recursive deletion
 
 }
 
 string FileSystem::cd(const string& path) {
-	// IMPLEMENT ME
+	// navigate to the directory specified by path and update curr_.
 
-	return ""; // dummy
+    Node* tmp = curr_->leftmostChild_;
+
+    if(path=="..") {
+        // move to parent directory.
+        if(curr_ == root_) {
+            return "invalid path"; // already at root
+        } else {
+            curr_ = curr_->parent_;
+            return "";
+        }
+    }else if (path == "~" || path == "/") {
+        // move to root directory. 
+        curr_ = root_;
+        return "";
+    } else if (path == ".") {
+        // stay in current directory.
+        return "";
+    } 
+    
+    // if curr has a child with name == path, and it is a directory, move curr_ to that child.
+    while(tmp != nullptr) {
+        if(tmp->name_ == path) {
+            if(tmp->isDir_) {
+                curr_ = tmp;
+                return "";
+            } else {
+                return "invalid path";
+            }
+        }
+        tmp = tmp->rightSibling_;
+    }
+
+    return "invalid path";
 }
+
 
 // This is done for you as an example
 string FileSystem::ls() const {

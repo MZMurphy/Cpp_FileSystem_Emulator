@@ -59,7 +59,7 @@ make
 ./FileSystemTesterMain [test_cases]
 ```
 
-## File System Structure Exampleto
+## File System Structure Example
 ```
 /
 ├── a.txt
