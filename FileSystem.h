@@ -44,6 +44,7 @@ class FileSystem {
 	string handleSpecialPaths(const string& path);
 	string navigateToChild(const string& path);
 	[[nodiscard]] Node* findChild(const string& name) const;
+    string treeRecursion(Node* node, int nestCount) const;
 
 public:
 	// default constructor

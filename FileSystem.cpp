@@ -1,8 +1,13 @@
 #include "FileSystem.h"
 #include <iostream>
+#include <string>
 
 
-// Private helper methods
+/* 
+==================================
+// My private helper methods.
+==================================
+*/
 
 // Used by cd() to handle special navigation cases like "..", ".", "/", "~".
 // Future use: extended for more complex path parsing.
@@ -56,7 +61,40 @@ Node* FileSystem::findChild(const string& name) const {
     return nullptr;
 }
 
+// Used by tree() to recursively traverse and format directory structure.
+// Future use: any command that needs hierarchical directory display.
+string FileSystem::treeRecursion(Node* node, int nestCount) const {
+    string res = "";
+    Node* tmp = node->leftmostChild_;
+
+    while(tmp != nullptr) {
+        // Indent and add current node.
+        res += std::string(nestCount + 1, ' ') + tmp->name_;
+        if (tmp->isDir_ ) {
+            res += "/";
+        } 
+        res += "\n";
+        
+        // Traverse into leftmost child.
+        if(tmp->leftmostChild_ != nullptr) {
+            string childRes = treeRecursion(tmp, nestCount + 1);
+            if(!childRes.empty()) {
+                res += childRes + "\n";
+            }
+        }
+        tmp = tmp->rightSibling_;
+    }
+    // remove extra \n like in predefined ls().
+    if (res != "") res.pop_back(); 
+    return res; // return tree path from curr_.
+
+}
+
+/* 
+==================================
 // Where predefined methods start.
+==================================
+*/
 
 Node::Node(const string& name, bool isDir, Node* parent, Node* leftmostChild, Node* rightSibling) {
 	// IMPLEMENT ME
@@ -201,10 +239,21 @@ string FileSystem::pwd() const {
 	return res; 
 }
 
-string FileSystem::tree() const {
-	// Append string to representation recursively.
 
-	return ""; // dummy
+string FileSystem::tree() const {
+	// Append right sibling and leftmost child strings recursively to result.
+
+    string res = "";
+    // Determine if at root.
+    if(curr_ == root_ && curr_->leftmostChild_ == nullptr) {
+        res += "/";
+    }else if(curr_ == root_) {
+        res += + "/\n" + treeRecursion(curr_, 0);
+    }else
+    {
+        res += curr_->name_ + "/\n" + treeRecursion(curr_, 0);
+    }
+    return res;
 }
 
 string FileSystem::touch(const string& name) {
