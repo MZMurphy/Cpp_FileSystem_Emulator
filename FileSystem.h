@@ -40,6 +40,11 @@ class FileSystem {
 
 	// you are allowed to add other members
 
+	// Private helper methods
+	string handleSpecialPaths(const string& path);
+	string navigateToChild(const string& path);
+	[[nodiscard]] Node* findChild(const string& name) const;
+
 public:
 	// default constructor
 	FileSystem();

@@ -1,6 +1,63 @@
 #include "FileSystem.h"
 #include <iostream>
 
+
+// Private helper methods
+
+// Used by cd() to handle special navigation cases like "..", ".", "/", "~".
+// Future use: extended for more complex path parsing.
+string FileSystem::handleSpecialPaths(const string& path) {
+    if (path == "..") {
+        if (curr_ == root_) {
+            return "invalid path";
+        }
+        curr_ = curr_->parent_;
+        return "";
+    }
+
+    if (path == "/" || path == "~") {
+        curr_ = root_;
+        return "";
+    }
+
+    if (path == ".") {
+        return "";
+    }
+
+    return "continue";  // Signal to continue with child search.
+}
+
+// Used by cd() to move to a child directory by name
+// Future use: more commands that need to validate directory paths.
+string FileSystem::navigateToChild(const string& path) {
+    Node* child = findChild(path);
+    if (child == nullptr) {
+        return "invalid path";
+    }
+
+    if (!child->isDir_) {
+        return "invalid path";
+    }
+
+    curr_ = child;
+    return "";
+}
+
+// Used by navigateToChild() to search for child nodes by name
+// Future use: mkdir(), touch(), rm(), rmdir() to check for existing files/directories
+Node* FileSystem::findChild(const string& name) const {
+    Node* tmp = curr_->leftmostChild_;
+    while(tmp != nullptr) {
+        if(tmp->name_ == name) {
+            return tmp;
+        }
+        tmp = tmp->rightSibling_;
+    }
+    return nullptr;
+}
+
+// Where predefined methods start.
+
 Node::Node(const string& name, bool isDir, Node* parent, Node* leftmostChild, Node* rightSibling) {
 	// IMPLEMENT ME
     name_ = name;
@@ -103,41 +160,11 @@ FileSystem::~FileSystem() {
 }
 
 string FileSystem::cd(const string& path) {
-	// navigate to the directory specified by path and update curr_.
+    // navigate to the directory specified by path and update curr_.
+    string result = handleSpecialPaths(path);
+    if (result != "continue") return result;
 
-    Node* tmp = curr_->leftmostChild_;
-
-    if(path=="..") {
-        // move to parent directory.
-        if(curr_ == root_) {
-            return "invalid path"; // already at root
-        } else {
-            curr_ = curr_->parent_;
-            return "";
-        }
-    }else if (path == "~" || path == "/") {
-        // move to root directory. 
-        curr_ = root_;
-        return "";
-    } else if (path == ".") {
-        // stay in current directory.
-        return "";
-    } 
-    
-    // if curr has a child with name == path, and it is a directory, move curr_ to that child.
-    while(tmp != nullptr) {
-        if(tmp->name_ == path) {
-            if(tmp->isDir_) {
-                curr_ = tmp;
-                return "";
-            } else {
-                return "invalid path";
-            }
-        }
-        tmp = tmp->rightSibling_;
-    }
-
-    return "invalid path";
+    return navigateToChild(path);
 }
 
 
@@ -175,7 +202,7 @@ string FileSystem::pwd() const {
 }
 
 string FileSystem::tree() const {
-	// IMPLEMENT ME
+	// Append string to representation recursively.
 
 	return ""; // dummy
 }
