@@ -131,9 +131,9 @@ void FileSystem::deleteChild(Node* removeTarget) {
         }
         delete removeTarget; // Free memory.
 }
-// Used by mv() to detach a node from file system before reattaching it elsewhere.
+// Used by mv() to detach a node from current position in file system before reattaching it elsewhere.
 // For commands that move files/directories.
-void FileSystem::detachNode(Node* node){
+void FileSystem::detachChild(Node* node){
     if (curr_->leftmostChild_ == node) {
             curr_->leftmostChild_ = node->rightSibling_;
         } else {
@@ -148,14 +148,29 @@ void FileSystem::detachNode(Node* node){
 
 // Used by mv() to rename nodes without changing their location.
 // For commands that rename files/directories.
-string FileSystem::renameNode(const string& src, const string& dest){
-    ;
+string FileSystem::renameChild(const string& src, const string& dest){
+    Node* srcNode = findChild(src);
+    detachChild(srcNode);
+    srcNode->name_ = dest;
+    insertChildAlphabetical(srcNode);
+    return ""; // success
 }
 
 // Used by mv() to move nodes between directories.
 // For commands that move files/directories.
-string FileSystem::moveNode(const string& src, const string& dest){
-    ;
+string FileSystem::moveChild(const string& src, const string& dest){
+    Node* srcNode = findChild(src);
+    Node* destNode = findChild(dest);
+
+    detachChild(srcNode);
+    srcNode->parent_ = destNode;
+
+    // Insert into destination directory in alphabetical order.
+    Node* originalCurr = curr_;
+    curr_ = destNode;
+    insertChildAlphabetical(srcNode);
+    curr_ = originalCurr; // Restore curr_.
+    return ""; // success
 }
 
 /* 
@@ -410,57 +425,26 @@ string FileSystem::mv(const string& src, const string& dest) {
     }
 
     // Move.
-
+    
     // Traverse children to find destination node.
     Node* destNode = findChild(dest);
     if (dest == "..") {
         Node* parentNode = curr_->parent_;
         // Move to parent directory and detach source node from current location.
-        detachNode(parentNode);
-        /* if (curr_->leftmostChild_ == srcNode) {
-            curr_->leftmostChild_ = srcNode->rightSibling_;
-        } else {
-            Node* prev = curr_->leftmostChild_;
-            while (prev->rightSibling_ != srcNode) {
-                prev = prev->rightSibling_;
-            }
-            prev->rightSibling_ = srcNode->rightSibling_;
-        }
-        */
-        
-        
-        // Insert source node into parent directory.
-        srcNode->parent_ = parentNode;
-        curr_ = parentNode;
-        insertChildAlphabetical(srcNode);
+        moveChild(src, "..");
         return "";
+    } else if (destNode != nullptr && destNode->isDir_) {
+        // Move to a different directory/path.
+        string res = moveChild(src, dest);
+        return res;
     }
     
     // Rename.
 
-    // Check if destination in the same directory as source.
+    // Check if destination in the same directory as source (rename case).
     if (destNode == nullptr) {
-        
-        // Detach source node from sibling list for reorder.
-        srcNode->name_ = dest;
-        detachNode(srcNode);
-        /*
-        if(curr_->leftmostChild_ == srcNode) {
-            curr_->leftmostChild_ = srcNode->rightSibling_;
-        } else {
-            Node* prev = curr_->leftmostChild_;
-            while (prev->rightSibling_ != srcNode) {
-                prev = prev->rightSibling_;
-            }
-            prev->rightSibling_ = srcNode->rightSibling_;
-        }
-        */
-
-        // Alphabetical insert with new name.
-        srcNode->rightSibling_ = nullptr; 
-        insertChildAlphabetical(srcNode);
-        return "";
+        return renameChild(src, dest);
     }
-    
-	return ""; // dummy
+
+    return ""; // dummy
 }
