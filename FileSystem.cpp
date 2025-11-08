@@ -59,7 +59,7 @@ string FileSystem::navigateToChild(const string& path) {
     }
 
     curr_ = child;
-    return "";
+    return ""; // success.
 }
 
 // by mkdir() and touch() to insert new child nodes in alphabetical order.
@@ -131,6 +131,32 @@ void FileSystem::deleteChild(Node* removeTarget) {
         }
         delete removeTarget; // Free memory.
 }
+// Used by mv() to detach a node from file system before reattaching it elsewhere.
+// For commands that move files/directories.
+void FileSystem::detachNode(Node* node){
+    if (curr_->leftmostChild_ == node) {
+            curr_->leftmostChild_ = node->rightSibling_;
+        } else {
+            Node* prev = curr_->leftmostChild_;
+            while (prev->rightSibling_ != node) {
+                prev = prev->rightSibling_;
+            }
+            prev->rightSibling_ = node->rightSibling_;
+        }
+}
+
+
+// Used by mv() to rename nodes without changing their location.
+// For commands that rename files/directories.
+string FileSystem::renameNode(const string& src, const string& dest){
+    ;
+}
+
+// Used by mv() to move nodes between directories.
+// For commands that move files/directories.
+string FileSystem::moveNode(const string& src, const string& dest){
+    ;
+}
 
 /* 
 ==================================
@@ -139,7 +165,7 @@ void FileSystem::deleteChild(Node* removeTarget) {
 */
 
 Node::Node(const string& name, bool isDir, Node* parent, Node* leftmostChild, Node* rightSibling) {
-	// IMPLEMENT ME
+    // Initialise attributes.
     name_ = name;
     isDir_ = isDir;
     parent_ = parent;
@@ -390,7 +416,8 @@ string FileSystem::mv(const string& src, const string& dest) {
     if (dest == "..") {
         Node* parentNode = curr_->parent_;
         // Move to parent directory and detach source node from current location.
-        if (curr_->leftmostChild_ == srcNode) {
+        detachNode(parentNode);
+        /* if (curr_->leftmostChild_ == srcNode) {
             curr_->leftmostChild_ = srcNode->rightSibling_;
         } else {
             Node* prev = curr_->leftmostChild_;
@@ -399,6 +426,7 @@ string FileSystem::mv(const string& src, const string& dest) {
             }
             prev->rightSibling_ = srcNode->rightSibling_;
         }
+        */
         
         
         // Insert source node into parent directory.
@@ -415,6 +443,8 @@ string FileSystem::mv(const string& src, const string& dest) {
         
         // Detach source node from sibling list for reorder.
         srcNode->name_ = dest;
+        detachNode(srcNode);
+        /*
         if(curr_->leftmostChild_ == srcNode) {
             curr_->leftmostChild_ = srcNode->rightSibling_;
         } else {
@@ -424,6 +454,7 @@ string FileSystem::mv(const string& src, const string& dest) {
             }
             prev->rightSibling_ = srcNode->rightSibling_;
         }
+        */
 
         // Alphabetical insert with new name.
         srcNode->rightSibling_ = nullptr; 
@@ -431,14 +462,5 @@ string FileSystem::mv(const string& src, const string& dest) {
         return "";
     }
     
-
-
-
-
-
-
-
-
-
 	return ""; // dummy
 }

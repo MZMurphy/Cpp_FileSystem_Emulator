@@ -47,6 +47,11 @@ class FileSystem {
     string treeRecursion(Node* node, int nestCount) const;
     void insertChildAlphabetical(Node* newNode);
     void deleteChild(Node* removeTarget);
+    void detachNode(Node* node);
+    string renameNode(const string& src, const string& dest);
+    string moveNode(const string& src, const string& dest);
+
+
 
 public:
 	// default constructor
