@@ -119,10 +119,8 @@ void FileSystem::deleteChild(Node* removeTarget) {
     // This function handles recursive deletion of nodes (files and dirs).
     
     if (curr_->leftmostChild_ == removeTarget){
-        // Remove the target from the list.
-        if(curr_->leftmostChild_ == removeTarget) {
-            // Becomes the leftmost child.
-            curr_->leftmostChild_ = removeTarget->rightSibling_;
+        // Remove the target from the list. Becomes the leftmost child.
+        curr_->leftmostChild_ = removeTarget->rightSibling_;
         } else {
             // prev points to the sibling before removeTarget.
             Node* prev = curr_->leftmostChild_;
@@ -132,7 +130,6 @@ void FileSystem::deleteChild(Node* removeTarget) {
             prev->rightSibling_ = removeTarget->rightSibling_;
         }
         delete removeTarget; // Free memory.
-    }
 }
 
 /* 
@@ -159,7 +156,7 @@ Node* Node::leftSibling() const {
 	/*
     /   Not implemented.
     /   I assume this was intended to be used as a potential helper function for other methods.
-    /   My guess is was intended to help similar to insertChildAlphabetical() to find the previous sibling.
+    /   My guess i was intended to help similar to insertChildAlphabetical() to find the previous sibling.
     */
 
 	return nullptr; // dummy
@@ -370,7 +367,78 @@ string FileSystem::rmdir(const string& name) {
 }
 
 string FileSystem::mv(const string& src, const string& dest) {
-	// IMPLEMENT ME
+	// move or rename a file/directory from src to dest.
+
+    if(src == dest) {
+        return "source and destination are the same";
+    }
+
+    if (dest == ".." && curr_ == root_) {
+        return "invalid path";
+    }
+    
+    // Traverse children to find source node.
+    Node* srcNode = findChild(src);
+    if (srcNode == nullptr) {
+        return "source does not exist";
+    }
+
+    // Move.
+
+    // Traverse children to find destination node.
+    Node* destNode = findChild(dest);
+    if (dest == "..") {
+        Node* parentNode = curr_->parent_;
+        // Move to parent directory and detach source node from current location.
+        if (curr_->leftmostChild_ == srcNode) {
+            curr_->leftmostChild_ = srcNode->rightSibling_;
+        } else {
+            Node* prev = curr_->leftmostChild_;
+            while (prev->rightSibling_ != srcNode) {
+                prev = prev->rightSibling_;
+            }
+            prev->rightSibling_ = srcNode->rightSibling_;
+        }
+        
+        
+        // Insert source node into parent directory.
+        srcNode->parent_ = parentNode;
+        curr_ = parentNode;
+        insertChildAlphabetical(srcNode);
+        return "";
+    }
+    
+    // Rename.
+
+    // Check if destination in the same directory as source.
+    if (destNode == nullptr) {
+        
+        // Detach source node from sibling list for reorder.
+        srcNode->name_ = dest;
+        if(curr_->leftmostChild_ == srcNode) {
+            curr_->leftmostChild_ = srcNode->rightSibling_;
+        } else {
+            Node* prev = curr_->leftmostChild_;
+            while (prev->rightSibling_ != srcNode) {
+                prev = prev->rightSibling_;
+            }
+            prev->rightSibling_ = srcNode->rightSibling_;
+        }
+
+        // Alphabetical insert with new name.
+        srcNode->rightSibling_ = nullptr; 
+        insertChildAlphabetical(srcNode);
+        return "";
+    }
+    
+
+
+
+
+
+
+
+
 
 	return ""; // dummy
 }
