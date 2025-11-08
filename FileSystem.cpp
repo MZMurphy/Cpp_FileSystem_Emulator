@@ -48,7 +48,7 @@ string FileSystem::navigateToChild(const string& path) {
     return "";
 }
 
-// Used by navigateToChild() to search for child nodes by name
+// Used by navigateToChild()  to search for child nodes by name
 // Future use: mkdir(), touch(), rm(), rmdir() to check for existing files/directories
 Node* FileSystem::findChild(const string& name) const {
     Node* tmp = curr_->leftmostChild_;
@@ -257,13 +257,75 @@ string FileSystem::tree() const {
 }
 
 string FileSystem::touch(const string& name) {
-	// IMPLEMENT ME
+	// Create new file node as child of curr_, keeping alphabetical ordering.
+    
+    if(name == "" ) {
+        return "invalid name";
+    }
 
-	return ""; // dummy
+    // Traverse list and check for existing file/directory with same name.
+    Node* existing = findChild(name);
+    if(existing != nullptr) {
+        return "file/directory already exists";
+    }
+
+    Node *newFile = new Node(name, false, curr_); 
+    // Insert new node in alphabetical order among siblings.
+    if(curr_->leftmostChild_ == nullptr || curr_->leftmostChild_->name_ > name) {
+        // Insert as leftmost child.
+        newFile->rightSibling_ = curr_->leftmostChild_;
+        curr_->leftmostChild_ = newFile;
+    } else {
+        // Find correct position to insert.
+        Node* prev = curr_->leftmostChild_;
+        Node* curr = prev->rightSibling_;
+        while(curr != nullptr && curr->name_ < name) {
+            prev = curr;
+            curr = curr->rightSibling_;
+        }
+        // Insert between prev and curr.
+        newFile->rightSibling_ = curr;
+        prev->rightSibling_ = newFile;
+    }
+
+
+    
+    //Node* name = new Node(name, false, root_, nullptr, d);
+
+	return ""; // success
 }
 
 string FileSystem::mkdir(const string& name) {
-	// IMPLEMENT ME
+	// Create new directory node as child of curr_, keeping alphabetical ordering.
+    
+    if(name == "" ) {
+        return "invalid name";
+    }
+
+    // Traverse list and check for existing file/directory with same name.
+    Node* existing = findChild(name);
+    if(existing != nullptr) {
+        return "file/directory already exists";
+    }
+
+    Node *newDir = new Node(name, true, curr_); 
+    // Insert new node in alphabetical order among siblings.
+    if(curr_->leftmostChild_ == nullptr || curr_->leftmostChild_->name_ > name) {
+        // Insert as leftmost child.
+        newDir->rightSibling_ = curr_->leftmostChild_;
+        curr_->leftmostChild_ = newDir;
+    } else {
+        // Find correct position to insert.
+        Node* prev = curr_->leftmostChild_;
+        Node* curr = prev->rightSibling_;
+        while(curr != nullptr && curr->name_ < name) {
+            prev = curr;
+            curr = curr->rightSibling_;
+        }
+        // Insert between prev and curr.
+        newDir->rightSibling_ = curr;
+        prev->rightSibling_ = newDir;
+    }
 
 	return ""; // dummy
 }
