@@ -125,19 +125,6 @@ Node::Node(const string& name, bool isDir, Node* parent, Node* leftmostChild, No
     parent_ = parent;
     leftmostChild_ = leftmostChild;
     rightSibling_ = rightSibling;
-
-    // ROOT
-    if(parent == nullptr) {
-        // This is the root.
-        if(name != "" || isDir != true) {
-            // Comment out the following line when running tests.
-            std::cerr << "Error: Invalid root node (must be directory with empty name)" << std::endl;
-        }
-    }
-    // DIRECTORY
-
-    // FILE
-
 }
 
 Node::~Node() {
@@ -146,7 +133,11 @@ Node::~Node() {
 }
 
 Node* Node::leftSibling() const {
-	// IMPLEMENT ME
+	/*
+    /   Not implemented.
+    /   I assume this was intended to be used as a potential helper function for other methods.
+    /   My guess is was intended to help similar to insertChildAlphabetical() to find the previous sibling.
+    */
 
 	return nullptr; // dummy
 }
@@ -318,13 +309,65 @@ string FileSystem::mkdir(const string& name) {
 }
 
 string FileSystem::rm(const string& name) {
-	// IMPLEMENT ME
+	// Search for node by name and remove it if it's a file.
 
-	return ""; // dummy
+    Node* removeTarget = findChild(name);
+    if (removeTarget == nullptr) {
+        return "file not found";
+    }
+
+    if (removeTarget->isDir_) {
+        return "not a file";
+    }
+
+    // Remove from sibling list.
+    if (curr_->leftmostChild_ == removeTarget) {
+        // Becomes the leftmost child.
+        curr_->leftmostChild_ = removeTarget->rightSibling_;
+    } else {
+        // Find the previous sibling to update its rightSibling_ pointer.
+        Node* prev = curr_->leftmostChild_;
+        while (prev->rightSibling_ != removeTarget) {
+            prev = prev->rightSibling_;
+        }
+        prev->rightSibling_ = removeTarget->rightSibling_;
+    }
+
+    delete removeTarget; // Free memory.
+
+	return ""; // success.
 }
 
 string FileSystem::rmdir(const string& name) {
-	// IMPLEMENT ME
+	// Search for dir by name and remove if it's a directory and empty.
+
+    Node* target = findChild(name);
+    if (target == nullptr) {
+        return "directory not found";
+    }
+
+    if (!target->isDir_) {
+        return "not a directory";
+    }
+
+    if (target->leftmostChild_ != nullptr) {
+        return "directory not empty";
+    }
+
+    // Remove target from sibling list.
+    if (curr_->leftmostChild_ == target) {
+        // Target is the leftmost child.
+        curr_->leftmostChild_ = target->rightSibling_;
+    } else {
+
+        Node* prev = curr_->leftmostChild_;
+        while (prev->rightSibling_ != target) {
+            prev = prev->rightSibling_;
+        }
+        prev->rightSibling_ = target->rightSibling_;
+    }
+
+    delete target; // Free memory.
 
 	return ""; // dummy
 }
