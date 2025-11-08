@@ -46,6 +46,7 @@ class FileSystem {
 	[[nodiscard]] Node* findChild(const string& name) const;
     string treeRecursion(Node* node, int nestCount) const;
     void insertChildAlphabetical(Node* newNode);
+    void deleteChild(Node* removeTarget);
 
 public:
 	// default constructor

@@ -10,6 +10,7 @@
 */
 
 // Used by cd() to handle special navigation cases like "..", ".", "/", "~".
+// For commands that need to interpret special paths.
 // Future use: extended for more complex path parsing.
 string FileSystem::handleSpecialPaths(const string& path) {
     if (path == "..") {
@@ -32,8 +33,8 @@ string FileSystem::handleSpecialPaths(const string& path) {
     return "continue";  // Signal to continue with child search.
 }
 
-// Used by navigateToChild(), mkdir(), touch()  to search for child nodes by name
-// Future use: rm(),  to check for existing files/directories
+// Used by navigateToChild(), mkdir(), touch(), rm()  to search for child nodes by name
+// For commands that need to find specific child nodes.
 Node* FileSystem::findChild(const string& name) const {
     Node* tmp = curr_->leftmostChild_;
     while(tmp != nullptr) {
@@ -46,7 +47,7 @@ Node* FileSystem::findChild(const string& name) const {
 }
 
 // Used by cd() to move to a child directory by name
-// Future use: more commands that need to validate directory paths.
+// For commands that need to validate directory paths.
 string FileSystem::navigateToChild(const string& path) {
     Node* child = findChild(path);
     if (child == nullptr) {
@@ -61,7 +62,7 @@ string FileSystem::navigateToChild(const string& path) {
     return "";
 }
 
-// Used by mkdir() and touch() to insert new child nodes in alphabetical order.
+// by mkdir() and touch() to insert new child nodes in alphabetical order.
 // Future use: any command that adds new files/directories.
 void FileSystem::insertChildAlphabetical(Node* newNode){
     if(curr_->leftmostChild_ == nullptr || curr_->leftmostChild_->name_ > newNode->name_)
@@ -110,6 +111,28 @@ string FileSystem::treeRecursion(Node* node, int nestCount) const {
     if (res != "") res.pop_back(); 
     return res; // return tree path from curr_.
 
+}
+
+// Used by rm() and rmdir() to remove child nodes from the current directory.
+// For any command that deletes files/directories.
+void FileSystem::deleteChild(Node* removeTarget) {
+    // This function handles recursive deletion of nodes (files and dirs).
+    
+    if (curr_->leftmostChild_ == removeTarget){
+        // Remove the target from the list.
+        if(curr_->leftmostChild_ == removeTarget) {
+            // Becomes the leftmost child.
+            curr_->leftmostChild_ = removeTarget->rightSibling_;
+        } else {
+            // prev points to the sibling before removeTarget.
+            Node* prev = curr_->leftmostChild_;
+            while (prev->rightSibling_ != removeTarget) {
+                prev = prev->rightSibling_;
+            }
+            prev->rightSibling_ = removeTarget->rightSibling_;
+        }
+        delete removeTarget; // Free memory.
+    }
 }
 
 /* 
@@ -311,65 +334,39 @@ string FileSystem::mkdir(const string& name) {
 string FileSystem::rm(const string& name) {
 	// Search for node by name and remove it if it's a file.
 
-    Node* removeTarget = findChild(name);
-    if (removeTarget == nullptr) {
+    Node* removeTargetFile = findChild(name);
+    if (removeTargetFile == nullptr) {
         return "file not found";
     }
 
-    if (removeTarget->isDir_) {
+    if (removeTargetFile->isDir_) {
         return "not a file";
     }
-
-    // Remove from sibling list.
-    if (curr_->leftmostChild_ == removeTarget) {
-        // Becomes the leftmost child.
-        curr_->leftmostChild_ = removeTarget->rightSibling_;
-    } else {
-        // Find the previous sibling to update its rightSibling_ pointer.
-        Node* prev = curr_->leftmostChild_;
-        while (prev->rightSibling_ != removeTarget) {
-            prev = prev->rightSibling_;
-        }
-        prev->rightSibling_ = removeTarget->rightSibling_;
-    }
-
-    delete removeTarget; // Free memory.
-
+    
+    // Remove target from sibling list.
+    deleteChild(removeTargetFile);
 	return ""; // success.
 }
 
 string FileSystem::rmdir(const string& name) {
 	// Search for dir by name and remove if it's a directory and empty.
 
-    Node* target = findChild(name);
-    if (target == nullptr) {
+    Node* removeTargetDir = findChild(name);
+    if (removeTargetDir == nullptr) {
         return "directory not found";
     }
 
-    if (!target->isDir_) {
+    if (!removeTargetDir->isDir_) {
         return "not a directory";
     }
 
-    if (target->leftmostChild_ != nullptr) {
+    if (removeTargetDir->leftmostChild_ != nullptr) {
         return "directory not empty";
     }
 
     // Remove target from sibling list.
-    if (curr_->leftmostChild_ == target) {
-        // Target is the leftmost child.
-        curr_->leftmostChild_ = target->rightSibling_;
-    } else {
-
-        Node* prev = curr_->leftmostChild_;
-        while (prev->rightSibling_ != target) {
-            prev = prev->rightSibling_;
-        }
-        prev->rightSibling_ = target->rightSibling_;
-    }
-
-    delete target; // Free memory.
-
-	return ""; // dummy
+    deleteChild(removeTargetDir);
+	return ""; // success.
 }
 
 string FileSystem::mv(const string& src, const string& dest) {
