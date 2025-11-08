@@ -150,6 +150,7 @@ void FileSystem::detachChild(Node* node){
 // For commands that rename files/directories.
 string FileSystem::renameChild(const string& src, const string& dest){
     Node* srcNode = findChild(src);
+    if (findChild(dest)) return "file/directory already exists";
     detachChild(srcNode);
     srcNode->name_ = dest;
     insertChildAlphabetical(srcNode);
@@ -160,13 +161,31 @@ string FileSystem::renameChild(const string& src, const string& dest){
 // For commands that move files/directories.
 string FileSystem::moveChild(const string& src, const string& dest){
     Node* srcNode = findChild(src);
+    if(!srcNode){return "source does not exist";} // Null check.
+
     Node* destNode = findChild(dest);
+    // Catch .. case earlier in mv().
+    if (dest == "..")
+    {
+        destNode = curr_->parent_;
+    } else {
+        if(!destNode){return "destination does not exist";} // Null check.
+        if(!destNode->isDir_){return "destination is not a directory";} // Dir check.
+    }
+    
+    // Check for conflicts before detaching.
+    Node* originalCurr = curr_;
+    curr_ = destNode;
+    if (findChild(srcNode->name_)) {
+        curr_ = originalCurr;
+        return "destination already has file/directory of same name";
+    }
+    curr_ = originalCurr;
 
     detachChild(srcNode);
     srcNode->parent_ = destNode;
 
     // Insert into destination directory in alphabetical order.
-    Node* originalCurr = curr_;
     curr_ = destNode;
     insertChildAlphabetical(srcNode);
     curr_ = originalCurr; // Restore curr_.
@@ -346,7 +365,7 @@ string FileSystem::touch(const string& name) {
     Node* newFile = newFile = new Node(name, false, curr_);
     // Insert new File node in alphabetical order among siblings.
     insertChildAlphabetical(newFile);
-	return ""; // success
+	return ""; // success.
 }
 
 string FileSystem::mkdir(const string& name) {
@@ -420,21 +439,24 @@ string FileSystem::mv(const string& src, const string& dest) {
     
     // Traverse children to find source node.
     Node* srcNode = findChild(src);
-    if (srcNode == nullptr) {
-        return "source does not exist";
-    }
+    if (!srcNode) { return "source does not exist";} // Null check.
 
     // Move.
-    
+
     // Traverse children to find destination node.
     Node* destNode = findChild(dest);
     if (dest == "..") {
         Node* parentNode = curr_->parent_;
         // Move to parent directory and detach source node from current location.
-        moveChild(src, "..");
-        return "";
+        string res = moveChild(src, "..");
+        return res;
+    } else if (destNode != nullptr && !destNode->isDir_) {
+        if (srcNode->isDir_){
+            return "source is a directory but destination is an existing file";
+        }else{
+            return "destination already has file of same name";
+        }
     } else if (destNode != nullptr && destNode->isDir_) {
-        // Move to a different directory/path.
         string res = moveChild(src, dest);
         return res;
     }
@@ -446,5 +468,5 @@ string FileSystem::mv(const string& src, const string& dest) {
         return renameChild(src, dest);
     }
 
-    return ""; // dummy
+    return "destination already has file/directory of same name";
 }
