@@ -32,6 +32,19 @@ string FileSystem::handleSpecialPaths(const string& path) {
     return "continue";  // Signal to continue with child search.
 }
 
+// Used by navigateToChild(), mkdir(), touch()  to search for child nodes by name
+// Future use: rm(),  to check for existing files/directories
+Node* FileSystem::findChild(const string& name) const {
+    Node* tmp = curr_->leftmostChild_;
+    while(tmp != nullptr) {
+        if(tmp->name_ == name) {
+            return tmp;
+        }
+        tmp = tmp->rightSibling_;
+    }
+    return nullptr;
+}
+
 // Used by cd() to move to a child directory by name
 // Future use: more commands that need to validate directory paths.
 string FileSystem::navigateToChild(const string& path) {
@@ -48,17 +61,26 @@ string FileSystem::navigateToChild(const string& path) {
     return "";
 }
 
-// Used by navigateToChild()  to search for child nodes by name
-// Future use: mkdir(), touch(), rm(), rmdir() to check for existing files/directories
-Node* FileSystem::findChild(const string& name) const {
-    Node* tmp = curr_->leftmostChild_;
-    while(tmp != nullptr) {
-        if(tmp->name_ == name) {
-            return tmp;
+// Used by mkdir() and touch() to insert new child nodes in alphabetical order.
+// Future use: any command that adds new files/directories.
+void FileSystem::insertChildAlphabetical(Node* newNode){
+    if(curr_->leftmostChild_ == nullptr || curr_->leftmostChild_->name_ > newNode->name_)
+    {
+        // Insert as the leftmost child.
+        newNode->rightSibling_ = curr_->leftmostChild_;
+        curr_->leftmostChild_ = newNode;
+    } else {
+        // Find alphabetical location to insert.
+        Node* prev = curr_->leftmostChild_;
+        Node* next = prev->rightSibling_;
+        while(next != nullptr && next->name_ < newNode->name_) {
+            prev = next;
+            next = next->rightSibling_;
         }
-        tmp = tmp->rightSibling_;
+        // Insert at the location found (with prev and next set).
+        newNode-> rightSibling_ = next;
+        prev->rightSibling_ = newNode;
     }
-    return nullptr;
 }
 
 // Used by tree() to recursively traverse and format directory structure.
@@ -269,29 +291,9 @@ string FileSystem::touch(const string& name) {
         return "file/directory already exists";
     }
 
-    Node *newFile = new Node(name, false, curr_); 
-    // Insert new node in alphabetical order among siblings.
-    if(curr_->leftmostChild_ == nullptr || curr_->leftmostChild_->name_ > name) {
-        // Insert as leftmost child.
-        newFile->rightSibling_ = curr_->leftmostChild_;
-        curr_->leftmostChild_ = newFile;
-    } else {
-        // Find correct position to insert.
-        Node* prev = curr_->leftmostChild_;
-        Node* curr = prev->rightSibling_;
-        while(curr != nullptr && curr->name_ < name) {
-            prev = curr;
-            curr = curr->rightSibling_;
-        }
-        // Insert between prev and curr.
-        newFile->rightSibling_ = curr;
-        prev->rightSibling_ = newFile;
-    }
-
-
-    
-    //Node* name = new Node(name, false, root_, nullptr, d);
-
+    Node* newFile = newFile = new Node(name, false, curr_);
+    // Insert new File node in alphabetical order among siblings.
+    insertChildAlphabetical(newFile);
 	return ""; // success
 }
 
@@ -308,26 +310,11 @@ string FileSystem::mkdir(const string& name) {
         return "file/directory already exists";
     }
 
-    Node *newDir = new Node(name, true, curr_); 
-    // Insert new node in alphabetical order among siblings.
-    if(curr_->leftmostChild_ == nullptr || curr_->leftmostChild_->name_ > name) {
-        // Insert as leftmost child.
-        newDir->rightSibling_ = curr_->leftmostChild_;
-        curr_->leftmostChild_ = newDir;
-    } else {
-        // Find correct position to insert.
-        Node* prev = curr_->leftmostChild_;
-        Node* curr = prev->rightSibling_;
-        while(curr != nullptr && curr->name_ < name) {
-            prev = curr;
-            curr = curr->rightSibling_;
-        }
-        // Insert between prev and curr.
-        newDir->rightSibling_ = curr;
-        prev->rightSibling_ = newDir;
-    }
+    Node* newDir = new Node(name, true, curr_);
+    // Insert new Dir node in alphabetical order among siblings.
+    insertChildAlphabetical(newDir);
 
-	return ""; // dummy
+	return ""; // success.
 }
 
 string FileSystem::rm(const string& name) {
