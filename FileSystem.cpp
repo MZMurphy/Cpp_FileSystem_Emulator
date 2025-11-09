@@ -349,7 +349,7 @@ string FileSystem::tree() const {
     if(curr_ == root_ && curr_->leftmostChild_ == nullptr) {
         res += "/";
     }else if(curr_ == root_) {
-        res += + "/\n" + treeRecursion(curr_, 0);
+        res += "/\n" + treeRecursion(curr_, 0);
     }else
     {
         res += curr_->name_ + "/\n" + treeRecursion(curr_, 0);
