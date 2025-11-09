@@ -454,7 +454,6 @@ string FileSystem::mv(const string& src, const string& dest) {
     // Traverse children to find destination node.
     Node* destNode = findChild(dest);
     if (dest == "..") {
-        Node* parentNode = curr_->parent_;
         // Move to parent directory and detach source node from current location.
         string res = moveChild(src, "..");
         return res;
