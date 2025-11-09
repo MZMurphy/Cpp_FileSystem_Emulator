@@ -17,6 +17,7 @@ string FileSystem::handleSpecialPaths(const string& path) {
         if (curr_ == root_) {
             return "invalid path";
         }
+        if (!curr_->parent_) return "invalid path"; // Null check.
         curr_ = curr_->parent_;
         return "";
     }
@@ -125,6 +126,7 @@ void FileSystem::deleteChild(Node* removeTarget) {
             // prev points to the sibling before removeTarget.
             Node* prev = curr_->leftmostChild_;
             while (prev->rightSibling_ != removeTarget) {
+                if (!prev->rightSibling_) return; // Null check.
                 prev = prev->rightSibling_;
             }
             prev->rightSibling_ = removeTarget->rightSibling_;
@@ -139,6 +141,7 @@ void FileSystem::detachChild(Node* node){
         } else {
             Node* prev = curr_->leftmostChild_;
             while (prev->rightSibling_ != node) {
+                if (!prev->rightSibling_) return; // Null check.
                 prev = prev->rightSibling_;
             }
             prev->rightSibling_ = node->rightSibling_;
@@ -150,11 +153,12 @@ void FileSystem::detachChild(Node* node){
 // For commands that rename files/directories.
 string FileSystem::renameChild(const string& src, const string& dest){
     Node* srcNode = findChild(src);
+    if (!srcNode) return "source does not exist"; // Null check.
     if (findChild(dest)) return "file/directory already exists";
     detachChild(srcNode);
     srcNode->name_ = dest;
     insertChildAlphabetical(srcNode);
-    return ""; // success
+    return ""; // success.
 }
 
 // Used by mv() to move nodes between directories.
@@ -170,7 +174,7 @@ string FileSystem::moveChild(const string& src, const string& dest){
         destNode = curr_->parent_;
     } else {
         if(!destNode){return "destination does not exist";} // Null check.
-        if(!destNode->isDir_){return "destination is not a directory";} // Dir check.
+        if(!destNode->isDir_){return "destination is not a directory";} 
     }
     
     // Check for conflicts before detaching.
@@ -189,7 +193,7 @@ string FileSystem::moveChild(const string& src, const string& dest){
     curr_ = destNode;
     insertChildAlphabetical(srcNode);
     curr_ = originalCurr; // Restore curr_.
-    return ""; // success
+    return ""; // success.
 }
 
 /* 
@@ -208,7 +212,13 @@ Node::Node(const string& name, bool isDir, Node* parent, Node* leftmostChild, No
 }
 
 Node::~Node() {
-	// IMPLEMENT ME
+	// Recursively delete all child nodes.
+    Node* child = leftmostChild_;
+    while (child != nullptr) {
+        Node* nextSibling = child->rightSibling_;
+        delete child; // Each child's destructor will handle its own children.
+        child = nextSibling;
+    }
 
 }
 
@@ -216,7 +226,7 @@ Node* Node::leftSibling() const {
 	/*
     /   Not implemented.
     /   I assume this was intended to be used as a potential helper function for other methods.
-    /   My guess i was intended to help similar to insertChildAlphabetical() to find the previous sibling.
+    /   My guess is it was intended to help similar to insertChildAlphabetical() to find the previous sibling.
     */
 
 	return nullptr; // dummy
@@ -284,10 +294,7 @@ FileSystem::FileSystem(const string& testinput) {
 }
 
 FileSystem::~FileSystem() {
-	// IMPLEMENT ME
-    // should delete all children nodes of root_ recursively AFTER we implement recurive node deletiion
-    //delete root_;  // Now this triggers recursive deletion
-
+    delete root_;  // Now this triggers recursive deletion.
 }
 
 string FileSystem::cd(const string& path) {
@@ -324,6 +331,7 @@ string FileSystem::pwd() const {
     Node* tmp = curr_;
     while(tmp != root_) {
         res = "/" + tmp->name_ + res;
+        if (!tmp->parent_) break; // Null check.
         tmp = tmp->parent_;
     }
     if (res == "") res = "/"; // root case.
