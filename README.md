@@ -2,7 +2,7 @@
 
 ## Overview 
 
-Terminal file system emulator implementing a tree-based directory structure utilising left-child and right-child representations as part of CO3105 Assignment 1.
+Terminal file system emulator implementing a tree-based directory structure utilising left-child and right-child representations
 
 
 ## Implementation
